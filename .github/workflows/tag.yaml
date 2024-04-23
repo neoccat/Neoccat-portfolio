@@ -1,0 +1,28 @@
+name: Create Release Tag
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  create_release_pr:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Git
+      run: |
+        git config --global user.name 'Neoccat'
+        git config --global user.email 'theotacc@gmail.com'
+
+    - name: Check if PR is merged and is a release PR
+      if: >
+        github.event.pull_request.merged == true &&
+        startsWith(github.event.pull_request.head.ref, 'release/')
+      run: |
+        git fetch
+        version=$(echo "${{ github.event.pull_request.head.ref }}" | grep -oP '(?<=release\/)\S+')
+        git tag -a ${version} -m "Changes"
+        git push origin ${version}

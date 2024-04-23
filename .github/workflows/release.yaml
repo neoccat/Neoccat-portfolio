@@ -1,0 +1,45 @@
+name: Create Release PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (v1.2.0):'
+        required: true
+      source_branch:
+        type: choice
+        description: 'Source branch for release:'
+        options:
+          - develop
+        required: true
+        default: 'develop'
+
+jobs:
+  create_release_pr:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Git
+      run: |
+        git config --global user.name 'Neoccat'
+        git config --global user.email 'theotacc@gmail.com'
+
+    - name: Merge source branch into release branch
+      run: |
+        git fetch
+        git checkout ${{ github.event.inputs.source_branch }}
+        git pull origin ${{ github.event.inputs.source_branch }}
+        git checkout -b release/${{ github.event.inputs.version }}
+        git merge --no-ff ${{ github.event.inputs.source_branch }}
+
+    - name: Push release branch
+      run: |
+        git push origin release/${{ github.event.inputs.version }}
+
+    - name: Create Pull Request
+      run: gh pr create -B main -H release/${{ github.event.inputs.version }} --title '${{ github.event.inputs.version }}' --body 'Created by Github action'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
